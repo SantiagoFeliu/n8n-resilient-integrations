@@ -1,0 +1,10 @@
+.env
+.env.*
+*.log
+*.sqlite
+*.db
+credentials*
+secrets*
+.n8n/
+node_modules/
+.DS_Store

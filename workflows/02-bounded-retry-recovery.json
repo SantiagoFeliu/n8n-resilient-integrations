@@ -1,0 +1,83 @@
+{
+  "name": "Process delivery with bounded retry and recovery",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "demo-delivery",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b1",
+      "name": "Receive delivery request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "demo-delivery"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body ?? $json;\nconst key = String(body.idempotencyKey ?? '');\nif (!key || key.length < 8) return [{ json: { ok: false, status: 400, reason: 'idempotency_key_required' } }];\nconst attempt = Math.max(1, Math.min(3, Number(body.attempt ?? 1)));\nconst simulated = body.simulatedResult === 'success' ? 'success' : 'transient_failure';\nreturn [{ json: { ok: simulated === 'success', route: simulated === 'success' ? 'success' : (attempt < 3 ? 'retry' : 'recovery'), status: simulated === 'success' ? 200 : 503, idempotencyKey: key, attempt, maxAttempts: 3, simulatedResult: simulated, retryable: simulated !== 'success' && attempt < 3 } }];"
+      },
+      "id": "b2",
+      "name": "Normalize retry state",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: $json.ok, status: $json.ok ? 200 : ($json.retryable ? 503 : 422), retryable: $json.retryable, idempotencyKey: $json.idempotencyKey, attempt: $json.attempt, nextAttempt: $json.retryable ? $json.attempt + 1 : undefined, recovery: !$json.ok && !$json.retryable ? 'manual_review_queue' : undefined, message: $json.ok ? 'Synthetic delivery accepted' : 'Synthetic delivery not accepted' } }}",
+        "options": {
+          "responseCode": "={{$json.ok ? 200 : ($json.retryable ? 503 : 422)}}"
+        }
+      },
+      "id": "b7",
+      "name": "Return delivery outcome",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        960,
+        200
+      ]
+    }
+  ],
+  "connections": {
+    "Receive delivery request": {
+      "main": [
+        [
+          {
+            "node": "Normalize retry state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize retry state": {
+      "main": [
+        [
+          {
+            "node": "Return delivery outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "demo-02",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

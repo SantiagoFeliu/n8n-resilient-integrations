@@ -1,0 +1,83 @@
+{
+  "name": "Validate inbound order webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "demo-order-intake",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1",
+      "name": "Receive order webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "demo-order-intake"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body ?? $json;\nconst required = ['orderId', 'email', 'amount'];\nconst missing = required.filter((key) => body[key] === undefined || body[key] === null || body[key] === '');\nconst validEmail = typeof body.email === 'string' && /^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(body.email);\nconst validAmount = Number.isFinite(Number(body.amount)) && Number(body.amount) > 0;\nreturn [{ json: { ok: missing.length === 0 && validEmail && validAmount, route: missing.length === 0 && validEmail && validAmount ? 'accepted' : 'rejected', requestId: `demo-${Date.now()}`, errors: [...missing.map((key) => `missing:${key}`), ...(!validEmail ? ['invalid:email'] : []), ...(!validAmount ? ['invalid:amount'] : [])], data: body } }];"
+      },
+      "id": "a2",
+      "name": "Validate order payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: $json.ok, requestId: $json.requestId, errors: $json.errors, message: $json.ok ? 'Accepted synthetic order' : 'Validation failed' } }}",
+        "options": {
+          "responseCode": "={{$json.ok ? 202 : 400}}"
+        }
+      },
+      "id": "a4",
+      "name": "Return validation response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        720,
+        -100
+      ]
+    }
+  ],
+  "connections": {
+    "Receive order webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate order payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate order payload": {
+      "main": [
+        [
+          {
+            "node": "Return validation response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "demo-01",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

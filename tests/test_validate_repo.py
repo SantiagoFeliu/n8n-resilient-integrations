@@ -58,6 +58,15 @@ class ValidatorTests(unittest.TestCase):
             stream.write("\nsynthetic marker " + "gh" + "p" + "_" + "not_a_real_token\n")
         self.assert_rejected_both_modes()
 
+    def test_python_bytecode_cache_is_ignored_by_secret_scan(self):
+        cache = self.root / "tests" / "__pycache__"
+        cache.mkdir()
+        (cache / "generated.pyc").write_bytes(b"compiled fixture " + "gh".encode() + b"p_not_a_real_token")
+        for optimized in (False, True):
+            with self.subTest(optimized=optimized):
+                result = self.run_validator(optimized)
+                self.assertEqual(result.returncode, 0, result.stderr)
+
     def assert_rejected_both_modes(self):
         for optimized in (False, True):
             with self.subTest(optimized=optimized):

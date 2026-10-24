@@ -16,7 +16,15 @@ for f in files:
                 for edge in branch:
                     if edge['node'] not in names:
                         raise ValueError(f"{f.name}: unknown target node {edge['node']}")
-text='\n'.join(p.read_text(errors='ignore') for p in root.rglob('*') if p.is_file() and p.name != 'validate_repo.py' and '.git' not in p.parts)
+text='\n'.join(
+    p.read_text(errors='ignore')
+    for p in root.rglob('*')
+    if p.is_file()
+    and p.name != 'validate_repo.py'
+    and '.git' not in p.parts
+    and '__pycache__' not in p.parts
+    and p.suffix != '.pyc'
+)
 for bad in ['sk-ant-', 'AIza', 'ghp_', 'BEGIN PRIVATE KEY', 'password=', 'secret=']:
     if bad.lower() in text.lower():
         raise ValueError(f'Potential secret marker: {bad}')

@@ -23,7 +23,8 @@ text='\n'.join(
     and p.name != 'validate_repo.py'
     and '.git' not in p.parts
     and '__pycache__' not in p.parts
-    and p.suffix != '.pyc'
+    and not any(part.startswith('.venv') or part in ('venv', 'node_modules') for part in p.parts)
+    and p.suffix not in ('.pyc', '.pyo')
 )
 for bad in ['sk-ant-', 'AIza', 'ghp_', 'BEGIN PRIVATE KEY', 'password=', 'secret=']:
     if bad.lower() in text.lower():

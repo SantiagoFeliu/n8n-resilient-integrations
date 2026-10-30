@@ -14,7 +14,7 @@ class ValidatorTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.root = pathlib.Path(self.temp.name) / "repo"
-        shutil.copytree(ROOT, self.root, ignore=shutil.ignore_patterns(".git", "__pycache__"))
+        shutil.copytree(ROOT, self.root, ignore=shutil.ignore_patterns(".git", "__pycache__", ".venv*", "venv", "node_modules"))
         self.validator = self.root / "tests" / "validate_repo.py"
 
     def tearDown(self):

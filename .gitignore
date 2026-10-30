@@ -8,3 +8,8 @@ secrets*
 .n8n/
 node_modules/
 .DS_Store
+.venv*/
+venv/
+__pycache__/
+*.pyc
+*.pyo
